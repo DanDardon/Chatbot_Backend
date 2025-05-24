@@ -1,9 +1,6 @@
 import oracledb
 from backend.config import DB_USER, DB_PASS, DB_DSN
 
-# Fuerza modo THIN explícitamente
-oracledb.init_oracle_client(lib_dir=None)  # <-- se asegura de no buscar Oracle Client
-
 def get_connection():
     try:
         conn = oracledb.connect(
@@ -16,3 +13,6 @@ def get_connection():
     except oracledb.Error as e:
         print("❌ Error al conectar con Oracle:", str(e))
         return None
+
+if __name__ == "__main__":
+    get_connection()
