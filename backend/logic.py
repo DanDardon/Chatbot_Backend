@@ -58,7 +58,21 @@ def procesar_mensaje(mensaje):
         return "¡Cuídate mucho! Si necesitas algo más, aquí estoy para ayudarte. 😊👋"
 
     if any(gracias in mensaje_lower for gracias in agradecimientos):
-        return "¡Gracias a ti por confiar en mí! 😊"
+    ultimo_contexto.clear()
+    ultimo_contexto.update({
+        "saludo_hecho": False,
+        "ultimo_sintoma": None
+    })
+
+    estado_enseñanza.clear()
+    estado_enseñanza.update({
+        "esperando_enfermedad": False,
+        "enfermedad_propuesta": None,
+        "esperando_medicamento": False
+    })
+
+    return "¡De nada! 😊 Si necesitas algo más, aquí estaré."
+
 
     # Aprendizaje: enfermedad propuesta
     if estado_enseñanza["esperando_enfermedad"]:
