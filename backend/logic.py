@@ -1,6 +1,6 @@
 import re
 import wikipedia
-from database import get_connection
+from backend.database import get_connection
 
 # Contexto de conversación temporal en memoria
 ultimo_contexto = {
