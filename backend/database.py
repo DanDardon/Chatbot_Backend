@@ -1,5 +1,5 @@
 import cx_Oracle
-from config import DB_USER, DB_PASS, DB_DSN
+from backend.config import DB_USER, DB_PASS, DB_DSN
 
 def get_connection():
     
