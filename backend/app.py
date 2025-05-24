@@ -27,5 +27,15 @@ def mensaje():
     respuesta = procesar_mensaje(texto_usuario)
     return jsonify({"respuesta": respuesta})
 
+
+@app.route("/reiniciar", methods=["POST"])
+def reiniciar():
+    data = request.get_json()
+    usuario = data.get("usuario")
+    if usuario in contextos:
+        del contextos[usuario]
+    return jsonify({"estado": "reiniciado"})
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=3000)
