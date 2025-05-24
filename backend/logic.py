@@ -1,6 +1,17 @@
 import re
 import wikipedia
 from backend.database import get_connection
+from collections import defaultdict
+
+contextos = defaultdict(lambda: {
+    "saludo_hecho": False,
+    "ultimo_sintoma": None,
+    "enfermedades_reportadas": set(),
+    "sintomas_reportados": [],
+    "esperando_enfermedad": False,
+    "enfermedad_propuesta": None,
+    "esperando_medicamento": False
+})
 
 # Contexto de conversación temporal en memoria
 ultimo_contexto = {
