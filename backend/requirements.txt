@@ -1,3 +1,4 @@
 flask
 flask-cors
 cx_Oracle
+gunicorn
