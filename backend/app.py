@@ -1,0 +1,29 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from database import get_connection
+from logic import procesar_mensaje
+
+app = Flask(__name__)
+CORS(app)
+
+@app.route("/verificar", methods=["GET"])
+def verificar():
+    conn = get_connection()
+    if conn:
+        conn.close()
+        return jsonify({"conexion": "exitosa"}), 200
+    else:
+        return jsonify({"conexion": "fallida"}), 500
+
+@app.route("/mensaje", methods=["POST"])
+def mensaje():
+    data = request.get_json()
+    texto_usuario = data.get("mensaje")
+    if not texto_usuario:
+        return jsonify({"respuesta": "Mensaje vacío."}), 400
+
+    respuesta = procesar_mensaje(texto_usuario)
+    return jsonify({"respuesta": respuesta})
+
+if __name__ == "__main__":
+    app.run(debug=True, port=3000)
