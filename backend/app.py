@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from backend.database import get_connection
 from backend.logic import procesar_mensaje
-
+from backend.logic import procesar_mensaje, contextos
 
 
 app = Flask(__name__)
@@ -35,7 +35,6 @@ def reiniciar():
     if usuario in contextos:
         del contextos[usuario]
     return jsonify({"estado": "reiniciado"})
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=3000)
