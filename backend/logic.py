@@ -40,8 +40,13 @@ def procesar_mensaje(mensaje):
     print("📝 Texto del usuario:", mensaje)
 
     # ✅ Evita recursión infinita después de aprendizaje
-    if ultimo_contexto.get("aprendio_en_ultima"):
+    if ultimo_contexto.get("aprendio_en_ultima") and not mensaje_lower.startswith("gracias"):
         ultimo_contexto["aprendio_en_ultima"] = False
+        sintomas_reintento = detectar_sintomas(mensaje)
+        if sintomas_reintento:
+            # forza que entre directamente al diagnóstico, ignorando aprendizaje
+            mensaje = " ".join(sintomas_reintento)
+            mensaje_lower = mensaje.lower()
 
     # Manejo de saludos comunes
     saludos = ["hola", "buenos días", "buenas tardes", "buenas noches"]
@@ -275,8 +280,7 @@ def procesar_mensaje(mensaje):
     conn.close()
 
     ultimo_contexto["aprendio_en_ultima"] = True
-    return f"No encontré una enfermedad asociada, pero he aprendido una relación para futuros casos con '{sintomas_utilizados[0][0]}'. Por favor intenta una nueva consulta para aplicar lo que aprendí. 🧠"
-
+    return f"No encontré una enfermedad asociada, pero he aprendido una relación para futuros casos con '{sintomas_utilizados[0][0]}'. Por favor, vuelve a escribirlo para darte una mejor respuesta. 🧠"
 
     mejor_id = max(puntajes.items(), key=lambda x: x[1])[0]
     cursor.execute("SELECT NOMBRE, DESCRIPCION FROM ENFERMEDADES WHERE ID_ENFERMEDAD = :1", [mejor_id])
