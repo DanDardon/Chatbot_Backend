@@ -45,7 +45,6 @@ def procesar_mensaje(mensaje):
     agradecimientos = ["gracias", "muchas gracias", "te lo agradezco"]
 
     if any(saludo in mensaje_lower for saludo in saludos):
-    if not ultimo_contexto.get("saludo_hecho", False):
         ultimo_contexto["saludo_hecho"] = True
         if ultimo_contexto["ultimo_sintoma"]:
             return f"¡Hola de nuevo! ¿Cómo sigues del {ultimo_contexto['ultimo_sintoma']}? 😊"
