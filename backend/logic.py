@@ -303,6 +303,22 @@ def procesar_mensaje(mensaje):
     import random
     respuesta += f"\n\nConsejo de salud: {random.choice(consejos_generales)}"
 
+    # 🔁 Reiniciar contexto automáticamente tras el diagnóstico
+    ultimo_contexto.clear()
+    ultimo_contexto.update({
+        "saludo_hecho": False,
+        "ultimo_sintoma": None,
+        "enfermedad": None
+    })
+
+    estado_enseñanza.clear()
+    estado_enseñanza.update({
+        "esperando_enfermedad": False,
+        "sintoma_reportado": None,
+        "enfermedad_propuesta": None,
+        "esperando_medicamento": False
+    })
+
     return respuesta
 
 def obtener_recomendacion_medicamento(enfermedad):
