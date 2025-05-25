@@ -45,14 +45,18 @@ def procesar_mensaje(mensaje):
     agradecimientos = ["gracias", "muchas gracias", "te lo agradezco"]
 
     if any(saludo in mensaje_lower for saludo in saludos):
-        if not ultimo_contexto.get("saludo_hecho", False):
-            ultimo_contexto["saludo_hecho"] = True
-            if ultimo_contexto["ultimo_sintoma"]:
-                return f"¡Hola de nuevo! ¿Cómo sigues del {ultimo_contexto['ultimo_sintoma']}? 😊"
-            else:
-                return "¡Hola! ¿Cómo te sientes hoy? 😊"
+    if not ultimo_contexto.get("saludo_hecho", False):
+        ultimo_contexto["saludo_hecho"] = True
+        if ultimo_contexto["ultimo_sintoma"]:
+            return f"¡Hola de nuevo! ¿Cómo sigues del {ultimo_contexto['ultimo_sintoma']}? 😊"
         else:
-            return "¡Ya estamos en contacto! ¿Cómo puedo ayudarte ahora? 😉"
+            return "¡Hola! ¿Cómo te sientes hoy? 😊"
+    else:
+        if ultimo_contexto.get("aprendio_en_ultima"):
+            ultimo_contexto["aprendio_en_ultima"] = False
+            return "¡Genial! Ya he aprendido algo nuevo. ¿Quieres probarlo con una nueva consulta? 🧠"
+        return "¡Ya estamos en contacto! ¿Cómo puedo ayudarte ahora? 😉"
+
 
     if any(gracias in mensaje_lower for gracias in agradecimientos):
         ultimo_contexto.clear()
@@ -342,8 +346,10 @@ def procesar_mensaje(mensaje):
     ultimo_contexto.update({
         "saludo_hecho": False,
         "ultimo_sintoma": None,
-        "enfermedad": None
+        "enfermedad": None,
+        "aprendio_en_ultima": True  # 👈 Marca de aprendizaje
     })
+
 
     estado_enseñanza.clear()
     estado_enseñanza.update({
