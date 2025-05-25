@@ -217,7 +217,7 @@ def procesar_mensaje(mensaje):
                 return f"Además de {sintoma_unico}, ¿también tienes {' o '.join(sugerencias)}?"
             else:
                 # ya se sugirió antes, seguir con la lógica normal
-            pass
+                pass
 
     conn = get_connection()
     if not conn:
