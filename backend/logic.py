@@ -45,17 +45,14 @@ def procesar_mensaje(mensaje):
     agradecimientos = ["gracias", "muchas gracias", "te lo agradezco"]
 
     if any(saludo in mensaje_lower for saludo in saludos):
-        ultimo_contexto["saludo_hecho"] = True
-        if ultimo_contexto["ultimo_sintoma"]:
-            return f"¡Hola de nuevo! ¿Cómo sigues del {ultimo_contexto['ultimo_sintoma']}? 😊"
+        if not ultimo_contexto.get("saludo_hecho", False):
+            ultimo_contexto["saludo_hecho"] = True
+            if ultimo_contexto["ultimo_sintoma"]:
+                return f"¡Hola de nuevo! ¿Cómo sigues del {ultimo_contexto['ultimo_sintoma']}? 😊"
+            else:
+                return "¡Hola! ¿Cómo te sientes hoy? 😊"
         else:
-            return "¡Hola! ¿Cómo te sientes hoy? 😊"
-    else:
-        if ultimo_contexto.get("aprendio_en_ultima"):
-            ultimo_contexto["aprendio_en_ultima"] = False
-            return "¡Genial! Ya he aprendido algo nuevo. ¿Quieres probarlo con una nueva consulta? 🧠"
-        return "¡Ya estamos en contacto! ¿Cómo puedo ayudarte ahora? 😉"
-
+            return "¡Ya estamos en contacto! ¿Cómo puedo ayudarte ahora? 😉"
 
     if any(gracias in mensaje_lower for gracias in agradecimientos):
         ultimo_contexto.clear()
@@ -274,7 +271,7 @@ def procesar_mensaje(mensaje):
     conn.close()
 
     # Intentar inmediatamente un nuevo análisis con los síntomas detectados
-    return f"No encontré una enfermedad asociada, pero he aprendido una relación para futuros casos con '{sintomas_utilizados[0][0]}'. Por favor intenta hacer una nueva consulta para aplicar lo que aprendí. 🧠"
+    return procesar_mensaje(" ".join(s[0] for s in sintomas_utilizados))
 
     mejor_id = max(puntajes.items(), key=lambda x: x[1])[0]
     cursor.execute("SELECT NOMBRE, DESCRIPCION FROM ENFERMEDADES WHERE ID_ENFERMEDAD = :1", [mejor_id])
@@ -345,10 +342,8 @@ def procesar_mensaje(mensaje):
     ultimo_contexto.update({
         "saludo_hecho": False,
         "ultimo_sintoma": None,
-        "enfermedad": None,
-        "aprendio_en_ultima": True  # 👈 Marca de aprendizaje
+        "enfermedad": None
     })
-
 
     estado_enseñanza.clear()
     estado_enseñanza.update({
