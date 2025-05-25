@@ -243,9 +243,35 @@ def procesar_mensaje(mensaje):
             for id_enfermedad, peso in reglas:
                 puntajes[id_enfermedad] = puntajes.get(id_enfermedad, 0) + peso
 
-    if not puntajes:
-        conn.close()
-        return "No se encontró ninguna enfermedad relacionada a los síntomas proporcionados."
+    if not puntajes and sintomas_utilizados:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+    # Crear una enfermedad genérica si no se tiene contexto previo
+    enfermedad_generica = "Condición relacionada a " + sintomas_utilizados[0][0]
+    cursor.execute("SELECT ID_ENFERMEDAD FROM ENFERMEDADES WHERE LOWER(NOMBRE) = :1", [enfermedad_generica.lower()])
+    row = cursor.fetchone()
+    if row:
+        id_enfermedad = row[0]
+    else:
+        cursor.execute("SELECT MAX(ID_ENFERMEDAD) FROM ENFERMEDADES")
+        id_enfermedad = (cursor.fetchone()[0] or 0) + 1
+        cursor.execute("INSERT INTO ENFERMEDADES (ID_ENFERMEDAD, NOMBRE, DESCRIPCION) VALUES (:1, :2, :3)",
+                       [id_enfermedad, enfermedad_generica, "Enfermedad generada automáticamente por el agente."])
+
+    # Insertar regla por cada síntoma detectado
+    cursor.execute("SELECT MAX(ID_REGLA) FROM REGLAS_INFERENCIA")
+    id_regla_base = cursor.fetchone()[0] or 0
+
+    for i, (_, id_sintoma) in enumerate(sintomas_utilizados):
+        cursor.execute("INSERT INTO REGLAS_INFERENCIA (ID_REGLA, ID_ENFERMEDAD, ID_SINTOMA, PESO) VALUES (:1, :2, :3, :4)",
+                       [id_regla_base + i + 1, id_enfermedad, id_sintoma, 0.5])
+
+    conn.commit()
+    conn.close()
+
+    return f"No encontré una enfermedad asociada, pero he aprendido una relación para futuros casos con '{sintomas_utilizados[0][0]}'. Intenta escribirlo nuevamente para ver qué aprendí. 🧠"
+
 
     mejor_id = max(puntajes.items(), key=lambda x: x[1])[0]
     cursor.execute("SELECT NOMBRE, DESCRIPCION FROM ENFERMEDADES WHERE ID_ENFERMEDAD = :1", [mejor_id])
