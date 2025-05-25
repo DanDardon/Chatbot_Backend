@@ -216,8 +216,8 @@ def procesar_mensaje(mensaje):
                 sugerencias = sugerencias_relacionadas[sintoma_unico]
                 return f"Además de {sintoma_unico}, ¿también tienes {' o '.join(sugerencias)}?"
             else:
-                # ya se sugirió antes, seguir con la lógica normal
-            pass
+                return "No se encontró información suficiente para diagnosticar tu caso."
+
 
     conn = get_connection()
     if not conn:
