@@ -270,8 +270,8 @@ def procesar_mensaje(mensaje):
     conn.commit()
     conn.close()
 
-    return f"No encontré una enfermedad asociada, pero he aprendido una relación para futuros casos con '{sintomas_utilizados[0][0]}'. Intenta escribirlo nuevamente para ver qué aprendí. 🧠"
-
+    # Intentar inmediatamente un nuevo análisis con los síntomas detectados
+    return procesar_mensaje(" ".join(s[0] for s in sintomas_utilizados))
 
     mejor_id = max(puntajes.items(), key=lambda x: x[1])[0]
     cursor.execute("SELECT NOMBRE, DESCRIPCION FROM ENFERMEDADES WHERE ID_ENFERMEDAD = :1", [mejor_id])
