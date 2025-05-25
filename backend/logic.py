@@ -17,8 +17,8 @@ contextos = defaultdict(lambda: {
 ultimo_contexto = {
     "enfermedad": None,
     "saludo_hecho": False,
-    "ultimo_sintoma": None
-    "sugerencia_dada": False,
+    "ultimo_sintoma": None,
+    "sugerencia_dada": False
 }
 
 estado_enseñanza = {
