@@ -18,6 +18,7 @@ ultimo_contexto = {
     "enfermedad": None,
     "saludo_hecho": False,
     "ultimo_sintoma": None
+    "sugerencia_dada": False,
 }
 
 estado_enseñanza = {
@@ -206,10 +207,17 @@ def procesar_mensaje(mensaje):
             "mareos": ["náuseas", "fatiga", "dolor de cabeza"]
         }
 
+        # después de if len(sintomas_detectados) == 1:
         sintoma_unico = sintomas_detectados[0]
+
         if sintoma_unico in sugerencias_relacionadas:
-            sugerencias = sugerencias_relacionadas[sintoma_unico]
-            return f"Además de {sintoma_unico}, ¿también tienes {' o '.join(sugerencias)}?"
+            if "sugerencia_dada" not in ultimo_contexto or not ultimo_contexto["sugerencia_dada"]:
+                ultimo_contexto["sugerencia_dada"] = True
+                sugerencias = sugerencias_relacionadas[sintoma_unico]
+                return f"Además de {sintoma_unico}, ¿también tienes {' o '.join(sugerencias)}?"
+            else:
+                # ya se sugirió antes, seguir con la lógica normal
+            pass
 
     conn = get_connection()
     if not conn:
