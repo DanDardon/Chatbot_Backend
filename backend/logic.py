@@ -1,4 +1,5 @@
 import re
+import random
 import wikipedia
 from backend.database import get_connection
 from collections import defaultdict
@@ -29,9 +30,9 @@ estado_enseñanza = {
 }
 
 consejos_generales = [
-    "Recuerda mantenerte hidratado y descansar lo suficiente. 💧😴",
-    "Evita automedicarte y consulta a un médico si los síntomas persisten. 🩺",
-    "Lávate las manos frecuentemente y evita tocarte la cara. 🧼🤲",
+    "Recuerda mantenerte hidratado y descansar lo suficiente. 💧🍋",
+    "Evita automedicarte y consulta a un médico si los síntomas persisten. 🦥",
+    "Lávate las manos frecuentemente y evita tocarte la cara. 🧼🥊",
     "Una alimentación balanceada puede ayudar a fortalecer tu sistema inmune. 🥦🍊"
 ]
 
@@ -69,7 +70,41 @@ def procesar_mensaje(mensaje):
         })
     
         return "¡De nada! 😊 Si necesitas algo más, aquí estaré."
+    
+    if any(gracias in mensaje_lower for gracias in agradecimientos):
+        ultimo_contexto.clear()
+        ultimo_contexto.update({
+            "saludo_hecho": False,
+            "ultimo_sintoma": None
+        })
+        estado_enseñanza.clear()
+        estado_enseñanza.update({
+            "esperando_enfermedad": False,
+            "enfermedad_propuesta": None,
+            "esperando_medicamento": False
+        })
+        return "¡De nada! 😊 Si necesitas algo más, aquí estaré."
 
+# 🟢 NUEVO BLOQUE: manejo de frases de mejoría
+    frases_mejora = [
+        "me siento bien", "ya estoy mejor", "estoy bien", "mejoré", 
+        "ya me siento mejor", "me encuentro mejor", "ya me recuperé", 
+        "estoy recuperado", "todo bien", "ya pasó", "ya no tengo nada",
+        "ya no me duele", "ya me siento normal", "ya no tengo síntomas",
+        "ya todo está bien", "ya estoy como nuevo", "ya estoy bien gracias",
+        "ya me curé", "ya me alivió", "ya se me pasó", "ya no tengo molestias",
+        "estoy mucho mejor", "ya me sané", "ya no me molesta", "todo tranquilo",
+        "ya pasó todo", "ya estoy al 100", "ya me repuse", "ya estoy al cien",
+        "gracias ya estoy bien", "estoy estable", "todo en orden", "ya estoy ok"
+    ]
+    if any(frase in mensaje_lower for frase in frases_mejora):
+        ultimo_contexto.clear()
+        ultimo_contexto.update({
+            "saludo_hecho": False,
+            "ultimo_sintoma": None,
+            "enfermedad": None
+        })
+        return "¡Qué buena noticia! Me alegra que te sientas mejor 😊 Si necesitas algo más, estoy aquí."
 
     # Aprendizaje: enfermedad propuesta
     if estado_enseñanza["esperando_enfermedad"]:
