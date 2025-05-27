@@ -312,13 +312,31 @@ def procesar_mensaje(mensaje):
     else:
         respuesta += " Por el momento, no tengo una recomendación específica de medicamento para esto."
 
-    respuesta = f"Según los síntomas que mencionas ({sintomas_str}), podrías estar presentando *{enfermedad}*. {descripcion_limpia}"
+    respuesta = f"Según los síntomas que mencionas (*{sintomas_str}*), podrías estar presentando *{enfermedad}*.\n"
 
+# Si es una enfermedad aprendida, incluir esta nota
+    if "aprendida por retroalimentación" in descripcion_limpia.lower():
+        respuesta += "\n🧠 *Nota:* Esta enfermedad fue generada automáticamente por el agente.\n"
+
+# Información del medicamento
     if med:
         nombre, dosis, duracion = med
-        respuesta += f" Se recomienda el medicamento {nombre}, con una dosis de {dosis}, durante {duracion}."
+        respuesta += f"\n💊 Se recomienda el medicamento *{nombre}*, con una dosis de {dosis}, durante {duracion}."
     else:
-        respuesta += " Por el momento, no tengo una recomendación específica de medicamento para esto."
+        respuesta += "\n💊 Por el momento, no tengo una recomendación específica de medicamento."
+
+# Gravedad
+    respuesta += f"\n\n🔎 *Nivel de gravedad estimado:* {nivel_gravedad.upper()} {emoji_alerta}"
+
+    if nivel_gravedad == "alta":
+        respuesta += "\n⚠️ Te recomiendo visitar a un médico cuanto antes."
+    elif nivel_gravedad == "media":
+        respuesta += "\n🩺 Observa cómo evolucionan tus síntomas. Si empeoran, busca atención médica."
+    else:
+        respuesta += "\n🙂 Parece ser una condición leve, pero mantente atento a cualquier cambio."
+
+    # Consejo adicional
+    respuesta += f"\n\n🩺 *Consejo de salud:* {random.choice(consejos_generales)}"
 
     # 🔴 Clasificación por gravedad justo aquí:
     gravedad_alta = ["dolor abdominal", "mareos", "fiebre alta"]
