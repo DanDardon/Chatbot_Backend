@@ -253,134 +253,115 @@ def procesar_mensaje(mensaje):
             else:
                 return "No se encontró información suficiente para diagnosticar tu caso."
 
+conn = get_connection()
+if not conn:
+    return "No se pudo establecer conexión con la base de datos."
+cursor = conn.cursor()
 
-    conn = get_connection()
-    if not conn:
-        return "No se pudo establecer conexión con la base de datos."
-    cursor = conn.cursor()
+cursor.execute("ALTER SESSION SET NLS_COMP = LINGUISTIC")
+cursor.execute("ALTER SESSION SET NLS_SORT = BINARY_CI")
 
-    cursor.execute("ALTER SESSION SET NLS_COMP = LINGUISTIC")
-    cursor.execute("ALTER SESSION SET NLS_SORT = BINARY_CI")
+puntajes = {}
+sintomas_utilizados = []
 
-    puntajes = {}
-    sintomas_utilizados = []
-
-    for sintoma_detectado in sintomas_detectados:
-        sintoma_detectado = sintoma_detectado.lower()
-        like_pattern = f"%{sintoma_detectado}%"
-        cursor.execute("SELECT ID_SINTOMA FROM SINTOMAS WHERE LOWER(NOMBRE) LIKE :1", [like_pattern])
-        row = cursor.fetchone()
-        if row:
-            id_sintoma = row[0]
-            sintomas_utilizados.append((sintoma_detectado, id_sintoma))
-            cursor.execute("SELECT ID_ENFERMEDAD, PESO FROM REGLAS_INFERENCIA WHERE ID_SINTOMA = :1", [id_sintoma])
-            reglas = cursor.fetchall()
-            for id_enfermedad, peso in reglas:
-                puntajes[id_enfermedad] = puntajes.get(id_enfermedad, 0) + peso
-
-    if not puntajes:
-        conn.close()
-        return "No se encontró ninguna enfermedad relacionada a los síntomas proporcionados."
-
-    mejor_id = max(puntajes.items(), key=lambda x: x[1])[0]
-    cursor.execute("SELECT NOMBRE, DESCRIPCION FROM ENFERMEDADES WHERE ID_ENFERMEDAD = :1", [mejor_id])
+for sintoma_detectado in sintomas_detectados:
+    sintoma_detectado = sintoma_detectado.lower()
+    like_pattern = f"%{sintoma_detectado}%"
+    cursor.execute("SELECT ID_SINTOMA FROM SINTOMAS WHERE LOWER(NOMBRE) LIKE :1", [like_pattern])
     row = cursor.fetchone()
-    if not row or not row[0]:
-        conn.close()
-        return "Se identificó una enfermedad, pero no se pudo recuperar su información."
+    if row:
+        id_sintoma = row[0]
+        sintomas_utilizados.append((sintoma_detectado, id_sintoma))
+        cursor.execute("SELECT ID_ENFERMEDAD, PESO FROM REGLAS_INFERENCIA WHERE ID_SINTOMA = :1", [id_sintoma])
+        reglas = cursor.fetchall()
+        for id_enfermedad, peso in reglas:
+            puntajes[id_enfermedad] = puntajes.get(id_enfermedad, 0) + peso
 
-    enfermedad = row[0]
-    descripcion_limpia = row[1].read() if hasattr(row[1], 'read') else row[1]
-    descripcion_limpia = descripcion_limpia.replace("Enfermedad aprendida por retroalimentación.", "").strip()
-
-    ultimo_contexto["enfermedad"] = enfermedad
-
-
-    cursor.execute("""SELECT M.NOMBRE, R.DOSIS, R.DURACION
-                      FROM RECOMENDACIONES R
-                      JOIN MEDICAMENTOS M ON R.ID_MEDICAMENTO = M.ID_MEDICAMENTO
-                      WHERE R.ID_ENFERMEDAD = :1""", [mejor_id])
-    med = cursor.fetchone()
+if not puntajes:
     conn.close()
+    return "No se encontró ninguna enfermedad relacionada a los síntomas proporcionados."
 
-    sintomas_str = ", ".join(sorted(set(s for s, _ in sintomas_utilizados)))
-    respuesta = f"Según los síntomas que mencionas ({sintomas_str}), podrías estar presentando *{enfermedad}*. {descripcion_limpia}"
+mejor_id = max(puntajes.items(), key=lambda x: x[1])[0]
+cursor.execute("SELECT NOMBRE, DESCRIPCION FROM ENFERMEDADES WHERE ID_ENFERMEDAD = :1", [mejor_id])
+row = cursor.fetchone()
+if not row or not row[0]:
+    conn.close()
+    return "Se identificó una enfermedad, pero no se pudo recuperar su información."
 
-    if med:
-        nombre, dosis, duracion = med
-        respuesta += f" Se recomienda el medicamento {nombre}, con una dosis de {dosis}, durante {duracion}."
-    else:
-        respuesta += " Por el momento, no tengo una recomendación específica de medicamento para esto."
+enfermedad = row[0]
+descripcion_limpia = row[1].read() if hasattr(row[1], 'read') else row[1]
+descripcion_limpia = descripcion_limpia.replace("Enfermedad aprendida por retroalimentación.", "").strip()
 
-    respuesta = f"Según los síntomas que mencionas (*{sintomas_str}*), podrías estar presentando *{enfermedad}*.\n"
+ultimo_contexto["enfermedad"] = enfermedad
 
-# Si es una enfermedad aprendida, incluir esta nota
-    if "aprendida por retroalimentación" in descripcion_limpia.lower():
-        respuesta += "\n🧠 *Nota:* Esta enfermedad fue generada automáticamente por el agente.\n"
+cursor.execute("""
+    SELECT M.NOMBRE, R.DOSIS, R.DURACION
+    FROM RECOMENDACIONES R
+    JOIN MEDICAMENTOS M ON R.ID_MEDICAMENTO = M.ID_MEDICAMENTO
+    WHERE R.ID_ENFERMEDAD = :1
+""", [mejor_id])
+med = cursor.fetchone()
+conn.close()
 
-# Información del medicamento
-    if med:
-        nombre, dosis, duracion = med
-        respuesta += f"\n💊 Se recomienda el medicamento *{nombre}*, con una dosis de {dosis}, durante {duracion}."
-    else:
-        respuesta += "\n💊 Por el momento, no tengo una recomendación específica de medicamento."
+# 🔴 Clasificación por gravedad: definir antes de usar
+gravedad_alta = ["dolor abdominal", "mareos", "fiebre alta"]
+gravedad_media = ["tos", "congestión nasal", "dolor de garganta"]
+gravedad_baja = ["picor en los ojos", "dolor de cabeza", "fatiga"]
 
-# Gravedad
-    respuesta += f"\n\n🔎 *Nivel de gravedad estimado:* {nivel_gravedad.upper()} {emoji_alerta}"
+nivel_gravedad = "leve"
+emoji_alerta = "🟢"
 
-    if nivel_gravedad == "alta":
-        respuesta += "\n⚠️ Te recomiendo visitar a un médico cuanto antes."
-    elif nivel_gravedad == "media":
-        respuesta += "\n🩺 Observa cómo evolucionan tus síntomas. Si empeoran, busca atención médica."
-    else:
-        respuesta += "\n🙂 Parece ser una condición leve, pero mantente atento a cualquier cambio."
+if any(s in gravedad_alta for s in sintomas_detectados):
+    nivel_gravedad = "alta"
+    emoji_alerta = "🔴"
+elif any(s in gravedad_media for s in sintomas_detectados):
+    nivel_gravedad = "media"
+    emoji_alerta = "🟠"
 
-    # Consejo adicional
-    respuesta += f"\n\n🩺 *Consejo de salud:* {random.choice(consejos_generales)}"
+# 🧾 Armar la respuesta ordenada
+sintomas_str = ", ".join(sorted(set(s for s, _ in sintomas_utilizados)))
+respuesta = f"Según los síntomas que mencionas (*{sintomas_str}*), podrías estar presentando *{enfermedad}*.\n"
 
-    # 🔴 Clasificación por gravedad justo aquí:
-    gravedad_alta = ["dolor abdominal", "mareos", "fiebre alta"]
-    gravedad_media = ["tos", "congestión nasal", "dolor de garganta"]
-    gravedad_baja = ["picor en los ojos", "dolor de cabeza", "fatiga"]
+if "aprendida por retroalimentación" in descripcion_limpia.lower():
+    respuesta += "\n🧠 *Nota:* Esta enfermedad fue generada automáticamente por el agente.\n"
 
-    nivel_gravedad = "leve"
-    emoji_alerta = "🟢"
+if descripcion_limpia:
+    respuesta += f"\n📄 *Descripción:* {descripcion_limpia}"
 
-    if any(s in gravedad_alta for s in sintomas_detectados):
-        nivel_gravedad = "alta"
-        emoji_alerta = "🔴"
-    elif any(s in gravedad_media for s in sintomas_detectados):
-        nivel_gravedad = "media"
-        emoji_alerta = "🟠"
+if med:
+    nombre, dosis, duracion = med
+    respuesta += f"\n💊 *Tratamiento recomendado:* {nombre}, {dosis}, durante {duracion}."
+else:
+    respuesta += "\n💊 Por el momento, no tengo una recomendación específica de medicamento."
 
-    respuesta += f"\n\nNivel de gravedad estimado: {nivel_gravedad.upper()} {emoji_alerta}"
-    if nivel_gravedad == "alta":
-        respuesta += "\n⚠️ Te recomiendo visitar a un médico cuanto antes."
-    elif nivel_gravedad == "media":
-        respuesta += "\n🩺 Observa cómo evolucionan tus síntomas. Si empeoran, busca atención médica."
-    else:
-        respuesta += "\n🙂 Parece una condición leve, pero mantente atento a cambios."
+respuesta += f"\n\n🔎 *Nivel de gravedad estimado:* {nivel_gravedad.upper()} {emoji_alerta}"
+if nivel_gravedad == "alta":
+    respuesta += "\n⚠️ Te recomiendo visitar a un médico cuanto antes."
+elif nivel_gravedad == "media":
+    respuesta += "\n🩺 Observa cómo evolucionan tus síntomas. Si empeoran, busca atención médica."
+else:
+    respuesta += "\n🙂 Parece ser una condición leve, pero mantente atento a cualquier cambio."
 
-    import random
-    respuesta += f"\n\nConsejo de salud: {random.choice(consejos_generales)}"
+respuesta += f"\n\n🩺 *Consejo de salud:* {random.choice(consejos_generales)}"
 
-    # 🔁 Reiniciar contexto automáticamente tras el diagnóstico
-    ultimo_contexto.clear()
-    ultimo_contexto.update({
-        "saludo_hecho": False,
-        "ultimo_sintoma": None,
-        "enfermedad": None
-    })
+# 🔁 Reiniciar contexto automáticamente tras el diagnóstico
+ultimo_contexto.clear()
+ultimo_contexto.update({
+    "saludo_hecho": False,
+    "ultimo_sintoma": None,
+    "enfermedad": None
+})
 
-    estado_enseñanza.clear()
-    estado_enseñanza.update({
-        "esperando_enfermedad": False,
-        "sintoma_reportado": None,
-        "enfermedad_propuesta": None,
-        "esperando_medicamento": False
-    })
+estado_enseñanza.clear()
+estado_enseñanza.update({
+    "esperando_enfermedad": False,
+    "sintoma_reportado": None,
+    "enfermedad_propuesta": None,
+    "esperando_medicamento": False
+})
 
-    return respuesta
+return respuesta
+
 
 def obtener_recomendacion_medicamento(enfermedad):
     conn = get_connection()
