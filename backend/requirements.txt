@@ -3,3 +3,6 @@ flask-cors
 oracledb
 gunicorn
 wikipedia
+bcrypt
+google-generativeai>=0.8.0
+python-dotenv
