@@ -103,7 +103,7 @@ def nueva_conversacion():
     if not user_id or user_id == "undefined":
         return jsonify({"error": "Missing or invalid user_id", "received": str(user_id)}), 400
 
-    conv_id = crear_nueva_conversacion(user_id, "Nueva conversación")
+    conv_id = crear_nueva_conversacion(user_id, "")
     if conv_id:
         return jsonify({
             "id_conversacion": conv_id,
@@ -162,6 +162,25 @@ def feedback():
     logger.info(f"📊 Feedback recibido: {feedback_type} | Mensaje #{message_index} | {timestamp}")
 
     return jsonify({"status": "ok", "message": "Feedback recibido"}), 200
+
+@app.route("/", methods=["GET"])
+def root():
+    return jsonify({
+        "status": "online",
+        "service": "Medical Chatbot API",
+        "version": "1.0.0",
+        "endpoints": [
+            "POST /register",
+            "POST /login",
+            "GET /conversaciones",
+            "POST /nueva-conversacion",
+            "GET /conversacion/<id>",
+            "DELETE /conversacion/<id>",
+            "POST /mensaje",
+            "POST /feedback",
+            "GET /health"
+        ]
+    }), 200
 
 @app.route("/health", methods=["GET"])
 def health():
