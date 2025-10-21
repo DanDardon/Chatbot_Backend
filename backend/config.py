@@ -9,7 +9,7 @@ from pathlib import Path
 DB_USER = os.getenv("DB_USER", "ADMIN")
 DB_PASS = os.getenv("DB_PASS", "Rd30072003!!")
 DB_DSN_ALIAS  = os.getenv("DB_DSN_ALIAS", "agentemedico_high")
-DB_WALLET_DIR = os.getenv("DB_WALLET_DIR", "/wallet")
+DB_WALLET_DIR = os.getenv("DB_WALLET_DIR", "./wallet")
 DB_WALLET_PASS = os.getenv("DB_WALLET_PASS", "Rd30072003!!")  # <-- si tu wallet pide passphrase, rellénala por variable de entorno
 
 def validate_wallet_dir() -> Path:
